@@ -40,7 +40,7 @@ func main() {
 
 	// 1002
 	pack.SetProtoID(1002)
-	userID := uint64(383168)
+	userID := uint64(req.FutuId)
 	reqData1002 := &GetGlobalState.Request{
 		C2S: &GetGlobalState.C2S{
 			UserID: &userID,

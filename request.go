@@ -18,9 +18,10 @@ import (
 
 // Request is a service for connect futuOpenD
 type Request struct {
-	Host string
-	Port string
-	conn net.Conn
+	Host   string
+	Port   string
+	FutuId uint64
+	conn   net.Conn
 }
 
 // Connect futuOpenD
@@ -86,7 +87,10 @@ func (r *Request) Recv() {
 			if err != nil {
 				log.Fatal("unmarshaling error:", err)
 			}
-			fmt.Println("RetType: ", *fut.RetType, *(*fut.S2C).KeepAliveInterval)
+
+			r.FutuId = *fut.S2C.LoginUserID
+
+			fmt.Println(fut.String())
 		} else if pack.nProtoID == uint32(1002) {
 			fut := &GetGlobalState.Response{}
 			err = proto.Unmarshal(pack.arrBody, fut)
