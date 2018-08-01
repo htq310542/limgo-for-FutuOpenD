@@ -14,6 +14,8 @@ import (
 
 func main() {
 
+	block := make(chan bool)
+
 	req := &limgo.Request{Host: "127.0.0.1", Port: "11111"}
 	err := req.Connect()
 	if err != nil {
@@ -22,6 +24,11 @@ func main() {
 	}
 	// pack
 	pack := &limgo.FutuPack{}
+
+	go func() {
+		// recv
+		req.Recv()
+	}()
 
 	// 1001
 	pack.SetProtoID(1001)
@@ -39,8 +46,9 @@ func main() {
 	req.Send(pack)
 
 	// 1002
+	time.Sleep(1 * time.Second) // for test
 	pack.SetProtoID(1002)
-	userID := uint64(req.FutuId)
+	userID := req.FutuID
 	reqData1002 := &GetGlobalState.Request{
 		C2S: &GetGlobalState.C2S{
 			UserID: &userID,
@@ -66,7 +74,6 @@ func main() {
 
 	req.KeepAlive(true)
 
-	// recv
-	req.Recv()
+	<-block
 
 }

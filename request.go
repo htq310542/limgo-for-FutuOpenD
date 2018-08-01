@@ -20,7 +20,8 @@ import (
 type Request struct {
 	Host   string
 	Port   string
-	FutuId uint64
+	FutuID uint64
+	ConnID uint64
 	conn   net.Conn
 }
 
@@ -88,7 +89,8 @@ func (r *Request) Recv() {
 				log.Fatal("unmarshaling error:", err)
 			}
 
-			r.FutuId = *fut.S2C.LoginUserID
+			r.FutuID = *fut.S2C.LoginUserID
+			r.ConnID = *fut.S2C.ConnID
 
 			fmt.Println(fut.String())
 		} else if pack.nProtoID == uint32(1002) {
