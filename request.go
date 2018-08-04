@@ -6,12 +6,18 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"limgo/futupb/GetGlobalState"
-	"limgo/futupb/InitConnect"
-	"limgo/futupb/KeepAlive"
 	"log"
 	"net"
 	"time"
+
+	"limgo/futupb/GetGlobalState"
+	"limgo/futupb/InitConnect"
+	"limgo/futupb/KeepAlive"
+	"limgo/futupb/Qot_GetSubInfo"
+	"limgo/futupb/Qot_GetTicker"
+	"limgo/futupb/Qot_RegQotPush"
+	"limgo/futupb/Qot_Sub"
+	"limgo/futupb/Qot_UpdateTicker"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -61,18 +67,21 @@ func (r *Request) Recv() {
 
 	// scanner
 	scanner := bufio.NewScanner(r.conn)
+	scanner.Buffer([]byte{}, bufio.MaxScanTokenSize*10)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if !atEOF && data[0] == 'F' {
 			if len(data) > 44 {
 				length := uint32(0)
 				binary.Read(bytes.NewReader(data[12:16]), binary.LittleEndian, &length)
-				if int(length)+4 <= len(data) {
+				if int(length)+4 < len(data) {
 					return int(length) + 44, data[:int(length)+44], nil
 				}
 			}
 		}
 		return
 	})
+
+	fmt.Println("test")
 
 	for scanner.Scan() {
 		pack := new(FutuPack)
@@ -108,13 +117,50 @@ func (r *Request) Recv() {
 			if err != nil {
 				log.Fatal("unmarshaling error:", err)
 			}
-			fmt.Println(fut.String())
+			// fmt.Println(fut.String())
+		} else if pack.nProtoID == uint32(3001) {
+			fut := &Qot_Sub.Response{}
+			err = proto.Unmarshal(pack.arrBody, fut)
+			if err != nil {
+				log.Fatal("unmarshaling error:", err)
+			}
+			fmt.Println(pack.nProtoID, fut.GetErrCode())
+		} else if pack.nProtoID == uint32(3002) {
+			fut := &Qot_RegQotPush.Response{}
+			err = proto.Unmarshal(pack.arrBody, fut)
+			if err != nil {
+				log.Fatal("unmarshaling error:", err)
+			}
+			fmt.Println(pack.nProtoID, fut.String())
+		} else if pack.nProtoID == uint32(3003) {
+			fut := &Qot_GetSubInfo.Response{}
+			err = proto.Unmarshal(pack.arrBody, fut)
+			if err != nil {
+				log.Fatal("unmarshaling error:", err)
+			}
+			fmt.Println(pack.nProtoID, fut.String())
+		} else if pack.nProtoID == uint32(3010) {
+			fut := &Qot_GetTicker.Response{}
+			err = proto.Unmarshal(pack.arrBody, fut)
+			if err != nil {
+				log.Fatal("unmarshaling error:", err)
+			}
+			fmt.Println(pack.nProtoID, fut.String())
+
+		} else if pack.nProtoID == uint32(3011) {
+			fut := &Qot_UpdateTicker.Response{}
+			err = proto.Unmarshal(pack.arrBody, fut)
+			if err != nil {
+				log.Fatal("unmarshaling error:", err)
+			}
+			fmt.Println(pack.nProtoID, fut.String())
+
 		}
 
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println("invalid package")
+		fmt.Println("invalid package", err)
 	}
 }
 
@@ -141,7 +187,7 @@ func (r *Request) KeepAlive(output bool) {
 			select {
 			case <-tick.C:
 				if output {
-					fmt.Println("tick")
+					// fmt.Println("tick")
 				}
 				// send
 				r.Send(pack)
