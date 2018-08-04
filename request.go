@@ -81,8 +81,6 @@ func (r *Request) Recv() {
 		return
 	})
 
-	fmt.Println("test")
-
 	for scanner.Scan() {
 		pack := new(FutuPack)
 		err := pack.Unpack(scanner.Bytes())
@@ -90,6 +88,8 @@ func (r *Request) Recv() {
 			fmt.Println("unpack error", err)
 			return
 		}
+
+		fmt.Println(pack.nProtoID, "==>")
 
 		if pack.nProtoID == uint32(1001) {
 			fut := &InitConnect.Response{}
